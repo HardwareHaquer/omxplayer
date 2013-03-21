@@ -1,5 +1,5 @@
 /*
- * 
+ *
  *      Copyright (C) 2012 Edgar Hucek
  *
  * This program is free software; you can redistribute it and/or modify
@@ -109,7 +109,7 @@ bool              m_has_subtitle        = false;
 float             m_display_aspect      = 0.0f;
 bool              m_boost_on_downmix    = false;
 bool              m_loop                = false;
-
+long              m_player_CLI_volume   = 300;
 enum{ERROR=-1,SUCCESS,ONEBYTE};
 
 static struct termios orig_termios;
@@ -149,8 +149,8 @@ void print_usage()
   printf("         -z / --nohdmiclocksync         do not adjust display refresh rate to match video\n");
   printf("         -t / --sid index               show subtitle with index\n");
   printf("         -r / --refresh                 adjust framerate/resolution to video\n");
-  printf("         -l / --pos                     start position (in seconds)\n");  
-  printf("         -L / --loop                    loop files endlessly\n");  
+  printf("         -l / --pos                     start position (in seconds)\n");
+  printf("         -L / --loop                    loop files endlessly\n");
   printf("              --boost-on-downmix        boost volume when downmixing\n");
   printf("              --subtitles path          external subtitles in UTF-8 srt format\n");
   printf("              --font path               subtitle font\n");
@@ -161,6 +161,7 @@ void print_usage()
   printf("              --lines n                 number of lines to accommodate in the subtitle buffer\n");
   printf("                                        (default: 3)\n");
   printf("              --win \"x1 y1 x2 y2\"       Set position of video window\n");
+  printf("          -v / --volume                   Set Volume level in dB");
 }
 
 void PrintSubtitleInfo()
@@ -363,10 +364,10 @@ void SetVideoMode(int width, int height, int fpsrate, int fpsscale, FORMAT_3D_T 
   TV_SUPPORTED_MODE_NEW_T *supported_modes = NULL;
   // query the number of modes first
   int max_supported_modes = m_BcmHost.vc_tv_hdmi_get_supported_modes_new(group, NULL, 0, &prefer_group, &prefer_mode);
- 
+
   if (max_supported_modes > 0)
     supported_modes = new TV_SUPPORTED_MODE_NEW_T[max_supported_modes];
- 
+
   if (supported_modes)
   {
     num_modes = m_BcmHost.vc_tv_hdmi_get_supported_modes_new(group,
@@ -396,11 +397,11 @@ void SetVideoMode(int width, int height, int fpsrate, int fpsscale, FORMAT_3D_T 
 	score += 0;
       else if(fabs(r - 2.0f*fps) / fps < 0.002f)
 	score += 1<<8;
-      else 
+      else
 	score += (1<<28)/r; // bad - but prefer higher framerate
 
       /* Check size too, only choose, bigger resolutions */
-      if(width && height) 
+      if(width && height)
       {
         /* cost of too small a resolution is high */
         score += max((int)(width -w), 0) * (1<<16);
@@ -408,14 +409,14 @@ void SetVideoMode(int width, int height, int fpsrate, int fpsscale, FORMAT_3D_T 
         /* cost of too high a resolution is lower */
         score += max((int)(w-width ), 0) * (1<<4);
         score += max((int)(h-height), 0) * (1<<4);
-      } 
+      }
 
       // native is good
-      if (!tv->native) 
+      if (!tv->native)
         score += 1<<16;
 
       // interlace is bad
-      if (scan_mode != tv->scan_mode) 
+      if (scan_mode != tv->scan_mode)
         score += (1<<16);
 
       // wanting 3D but not getting it is a negative
@@ -428,10 +429,10 @@ void SetVideoMode(int width, int height, int fpsrate, int fpsscale, FORMAT_3D_T 
       float par = get_display_aspect_ratio((HDMI_ASPECT_T)tv->aspect_ratio)*(float)tv->height/(float)tv->width;
       score += fabs(par - 1.0f) * (1<<12);
 
-      /*printf("mode %dx%d@%d %s%s:%x par=%.2f score=%d\n", tv->width, tv->height, 
+      /*printf("mode %dx%d@%d %s%s:%x par=%.2f score=%d\n", tv->width, tv->height,
              tv->frame_rate, tv->native?"N":"", tv->scan_mode?"I":"", tv->code, par, score);*/
 
-      if (score < best_score) 
+      if (score < best_score)
       {
         tv_found = tv;
         best_score = score;
@@ -441,7 +442,7 @@ void SetVideoMode(int width, int height, int fpsrate, int fpsscale, FORMAT_3D_T 
 
   if(tv_found)
   {
-    printf("Output mode %d: %dx%d@%d %s%s:%x\n", tv_found->code, tv_found->width, tv_found->height, 
+    printf("Output mode %d: %dx%d@%d %s%s:%x\n", tv_found->code, tv_found->width, tv_found->height,
            tv_found->frame_rate, tv_found->native?"N":"", tv_found->scan_mode?"I":"", tv_found->code);
     // if we are closer to ntsc version of framerate, let gpu know
     int ifps = (int)(fps+0.5f);
@@ -502,6 +503,7 @@ int main(int argc, char *argv[])
   bool                  m_refresh             = false;
   bool                  m_loop                = false;
   bool                  m_player_init         = false;
+  bool                  m_first_play          = true;
   double                startpts              = 0;
   int                   optind_filenames;
   CRect                 DestRect              = {0,0,0,0};
@@ -528,8 +530,9 @@ int main(int argc, char *argv[])
     { "nohdmiclocksync", no_argument,     NULL,          'z' },
     { "refresh",      no_argument,        NULL,          'r' },
     { "sid",          required_argument,  NULL,          't' },
-    { "pos",          required_argument,  NULL,          'l' },    
+    { "pos",          required_argument,  NULL,          'l' },
     { "loop",         no_argument,        NULL,          'L' },
+    { "volume",        required_argument, NULL,          'v' },
     { "font",         required_argument,  NULL,          font_opt },
     { "font-size",    required_argument,  NULL,          font_size_opt },
     { "align",        required_argument,  NULL,          align_opt },
@@ -544,7 +547,7 @@ int main(int argc, char *argv[])
   std::string mode;
   while ((c = getopt_long(argc, argv, "wihn:l:o:cslpd3:yzt:rL", longopts, NULL)) != -1)
   {
-    switch (c) 
+    switch (c)
     {
       case 'r':
         m_refresh = true;
@@ -635,6 +638,12 @@ int main(int argc, char *argv[])
         break;
       case 'L':
         m_loop = true;
+        break;
+        case 'v':
+        m_player_audio.SetCurrentVolume((long)atoi(optarg)); //accepts value but does not not volume
+        m_player_CLI_volume = (long)atoi(optarg);
+        printf("Current Volume: %.2fdB\n", m_player_audio.GetCurrentVolume() / 100.0f);
+         printf("Current Volume: %.2fdB\n", atoi(optarg) / 100.0f);
         break;
       case 0:
         break;
@@ -742,7 +751,7 @@ play_file:
 
     m_omx_reader->GetHints(OMXSTREAM_AUDIO, m_hints_audio);
     m_omx_reader->GetHints(OMXSTREAM_VIDEO, m_hints_video);
-	    
+
     if(m_has_video && m_refresh)
     {
       memset(&tv_state, 0, sizeof(TV_DISPLAY_STATE_T));
@@ -771,7 +780,7 @@ play_file:
       goto do_exit;
     }
 
-    while(m_has_audio && !m_player_audio.Open(m_hints_audio, m_av_clock, m_omx_reader, deviceString, 
+    while(m_has_audio && !m_player_audio.Open(m_hints_audio, m_av_clock, m_omx_reader, deviceString,
 					   m_passthrough, m_use_hw_audio,
 					   m_boost_on_downmix, m_thread_player)) {
       printf("audio open error. press enter to reset state\n");
@@ -860,7 +869,7 @@ play_file:
 
     if(g_abort)
       goto do_exit;
-    
+
     while((ch[chnum] = getchar()) != EOF) chnum++;
     if (chnum > 1) ch[0] = ch[chnum - 1] | (ch[chnum - 2] << 8);
 
@@ -1019,13 +1028,17 @@ play_file:
       default:
         break;
     }
-
+    m_player_audio.SetCurrentVolume(m_player_CLI_volume);
     if(m_Pause)
     {
       OMXClock::OMXSleep(2);
       continue;
     }
-
+    if(m_first_play)
+    {
+        m_incr = 30.0;
+        m_first_play = false;
+    }
     if(m_incr != 0 && !m_bMpeg)
     {
       int    seek_flags   = 0;
@@ -1058,7 +1071,7 @@ play_file:
       }
 
       m_av_clock->OMXStart(startpts);
-      
+
       if(m_has_subtitle)
         m_player_subtitles.Resume();
     }
@@ -1076,7 +1089,7 @@ play_file:
 #if 0
       CLog::Log(LOGDEBUG, "V : %8.02f %8d %8d A : %8.02f %8.02f Cv : %8d Ca : %8d                            \n",
              m_av_clock->OMXMediaTime(), m_player_video.GetDecoderBufferSize(),
-             m_player_video.GetDecoderFreeSpace(), m_player_audio.GetCurrentPTS() / DVD_TIME_BASE, 
+             m_player_video.GetDecoderFreeSpace(), m_player_audio.GetCurrentPTS() / DVD_TIME_BASE,
              m_player_audio.GetDelay(), m_player_video.GetCached(), m_player_audio.GetCached());
 #endif
     }
@@ -1149,10 +1162,10 @@ play_file:
       if(m_tv_show_info)
       {
         char response[80];
-        vc_gencmd(response, sizeof response, "render_bar 4 video_fifo %d %d %d %d", 
+        vc_gencmd(response, sizeof response, "render_bar 4 video_fifo %d %d %d %d",
                 m_player_video.GetDecoderBufferSize()-m_player_video.GetDecoderFreeSpace(),
                 0 , 0, m_player_video.GetDecoderBufferSize());
-        vc_gencmd(response, sizeof response, "render_bar 5 audio_fifo %d %d %d %d", 
+        vc_gencmd(response, sizeof response, "render_bar 5 audio_fifo %d %d %d %d",
                 (int)(100.0*m_player_audio.GetDelay()), 0, 0, 100*AUDIO_BUFFER_SECONDS);
       }
     }
