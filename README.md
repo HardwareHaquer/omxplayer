@@ -5,6 +5,16 @@ OMXPlayer is a commandline OMX player for the Raspberry Pi. It was developed as
 a testbed for the XBMC Raspberry PI implementation and is quite handy to use
 standalone. 
 
+This fork was forked from Pasky's fork which enables seamless looping.  It fixes
+an error in which the first time a file played it had no sound and would not loop.
+It is a hack fix where after the file opens the program calls seek(30) which fixes
+the issue...no idea why.
+
+Also adds --volume as a command line option where you can set the volume like so:
+"omxplayer --volume 2700" where 2700 is 27.00Db  This feature was added to so that
+ the volume of the track audio would be greater than that of the audio pop that
+occurs when one stream closes and another opens.
+
 Downloading OMXPlayer
 ---------------------
 
