@@ -109,7 +109,7 @@ bool OMXPlayerAudio::Open(COMXStreamInfo &hints, OMXClock *av_clock, OMXReader *
     printf("OMXPlayerAudio DLL error\n");
     return false;
   }
-  
+
   m_dllAvFormat.av_register_all();
 
   SetReader(omx_reader);
@@ -312,7 +312,7 @@ bool OMXPlayerAudio::Decode(OMXPacket *pkt)
     return true;
 
   if(!m_omx_reader->IsActive(OMXSTREAM_AUDIO, pkt->stream_index))
-    return true; 
+    return true;
 
   int channels = pkt->hints.channels;
 
@@ -322,7 +322,7 @@ bool OMXPlayerAudio::Decode(OMXPacket *pkt)
     if(channels == 6)
       channels = 8;
   }
- 
+
   unsigned int old_bitrate = m_hints.bitrate;
   unsigned int new_bitrate = pkt->hints.bitrate;
 
@@ -462,7 +462,7 @@ void OMXPlayerAudio::Process()
       m_packets.pop_front();
     }
     UnLock();
-    
+
     LockDecoder();
     if(m_flush && omx_pkt)
     {
@@ -489,7 +489,7 @@ void OMXPlayerAudio::Flush()
   m_flush = true;
   while (!m_packets.empty())
   {
-    OMXPacket *pkt = m_packets.front(); 
+    OMXPacket *pkt = m_packets.front();
     m_packets.pop_front();
     OMXReader::FreePacket(pkt);
   }
@@ -628,7 +628,7 @@ bool OMXPlayerAudio::OpenDecoder()
     if(m_passthrough)
       m_hw_decode = false;
     bAudioRenderOpen = m_decoder->Initialize(NULL, m_device.substr(4), m_pChannelMap,
-                                             m_hints, m_av_clock, m_passthrough, 
+                                             m_hints, m_av_clock, m_passthrough,
                                              m_hw_decode, m_boost_on_downmix);
   }
   else
@@ -645,11 +645,11 @@ bool OMXPlayerAudio::OpenDecoder()
   }
 
   m_codec_name = m_omx_reader->GetCodecName(OMXSTREAM_AUDIO);
-  
+
   if(!bAudioRenderOpen)
   {
     printf("OMXPlayerAudio audio decoder open error\n");
-    delete m_decoder; 
+    delete m_decoder;
     m_decoder = NULL;
     return false;
   }
@@ -657,13 +657,13 @@ bool OMXPlayerAudio::OpenDecoder()
   {
     if(m_passthrough)
     {
-      printf("Audio codec %s channels %d samplerate %d bitspersample %d\n",
-        m_codec_name.c_str(), 2, m_hints.samplerate, m_hints.bitspersample);
+//      printf("Audio codec %s channels %d samplerate %d bitspersample %d\n",
+ //       m_codec_name.c_str(), 2, m_hints.samplerate, m_hints.bitspersample);
     }
     else
     {
-      printf("Audio codec %s channels %d samplerate %d bitspersample %d\n",
-        m_codec_name.c_str(), m_hints.channels, m_hints.samplerate, m_hints.bitspersample);
+ //     printf("Audio codec %s channels %d samplerate %d bitspersample %d\n",
+ //       m_codec_name.c_str(), m_hints.channels, m_hints.samplerate, m_hints.bitspersample);
     }
   }
 

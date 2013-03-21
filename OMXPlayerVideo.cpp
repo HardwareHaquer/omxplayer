@@ -118,7 +118,7 @@ bool OMXPlayerVideo::Open(COMXStreamInfo &hints, OMXClock *av_clock, const CRect
 {
   if (!m_dllAvUtil.Load() || !m_dllAvCodec.Load() || !m_dllAvFormat.Load() || !av_clock)
     return false;
-  
+
   if(ThreadHandle())
     Close();
 
@@ -268,10 +268,10 @@ void OMXPlayerVideo::Output(double pts)
   }
 
   /*
-  printf("iPlayingClock %f iCurrentClock %f iClockSleep %f iFrameSleep %f iFrameDuration %f WaitAbsolut %f m_FlipTimeStamp %f pts %f\n", 
+  printf("iPlayingClock %f iCurrentClock %f iClockSleep %f iFrameSleep %f iFrameDuration %f WaitAbsolut %f m_FlipTimeStamp %f pts %f\n",
       iPlayingClock / DVD_TIME_BASE, iCurrentClock  / DVD_TIME_BASE,
       iClockSleep / DVD_TIME_BASE, iFrameSleep / DVD_TIME_BASE,
-      iFrameDuration / DVD_TIME_BASE, (iCurrentClock + iSleepTime) / DVD_TIME_BASE, m_FlipTimeStamp / DVD_TIME_BASE, 
+      iFrameDuration / DVD_TIME_BASE, (iCurrentClock + iSleepTime) / DVD_TIME_BASE, m_FlipTimeStamp / DVD_TIME_BASE,
       pts / DVD_TIME_BASE);
   */
 
@@ -442,7 +442,7 @@ void OMXPlayerVideo::Process()
       omx_pkt = NULL;
     }
     UnLockDecoder();
-    
+
     OMXPacket *subtitle_pkt = m_decoder->GetText();
 
     if(subtitle_pkt)
@@ -464,13 +464,13 @@ void OMXPlayerVideo::FlushSubtitles()
   LockSubtitles();
   while (!m_subtitle_packets.empty())
   {
-    OMXPacket *pkt = m_subtitle_packets.front(); 
+    OMXPacket *pkt = m_subtitle_packets.front();
     m_subtitle_packets.pop_front();
     OMXReader::FreePacket(pkt);
   }
   while (!m_overlays.empty())
   {
-    COMXOverlay *overlay = m_overlays.front(); 
+    COMXOverlay *overlay = m_overlays.front();
     m_overlays.pop_front();
     delete overlay;
   }
@@ -488,7 +488,7 @@ void OMXPlayerVideo::Flush()
   m_flush = true;
   while (!m_packets.empty())
   {
-    OMXPacket *pkt = m_packets.front(); 
+    OMXPacket *pkt = m_packets.front();
     m_packets.pop_front();
     OMXReader::FreePacket(pkt);
   }
@@ -553,8 +553,8 @@ bool OMXPlayerVideo::OpenDecoder()
   }
   else
   {
-    printf("Video codec %s width %d height %d profile %d fps %f\n",
-        m_decoder->GetDecoderName().c_str() , m_hints.width, m_hints.height, m_hints.profile, m_fps);
+//    printf("Video codec %s width %d height %d profile %d fps %f\n",
+//        m_decoder->GetDecoderName().c_str() , m_hints.width, m_hints.height, m_hints.profile, m_fps);
   }
 
   if(m_av_clock)
@@ -620,7 +620,7 @@ std::string OMXPlayerVideo::GetText()
   LockSubtitles();
   if (!m_subtitle_packets.empty())
   {
-    pkt = m_subtitle_packets.front(); 
+    pkt = m_subtitle_packets.front();
     if(!m_overlays.empty())
     {
       COMXOverlay *overlay = m_overlays.front();

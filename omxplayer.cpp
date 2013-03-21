@@ -29,6 +29,7 @@
 #include <string.h>
 
 #define AV_NOWARN_DEPRECATED
+#define DEBUG_VERBOSE 0
 
 extern "C" {
 #include <libavformat/avformat.h>
@@ -233,9 +234,9 @@ reader_open_thread(void *data)
   }
 
   m_omx_reader_next = new OMXReader;
-  printf("thread nextreader %p (%d)\n", m_omx_reader_next, m_omx_reader_next->AudioStreamCount());
+  if(DEBUG_VERBOSE) printf("thread nextreader %p (%d)\n", m_omx_reader_next, m_omx_reader_next->AudioStreamCount());
   m_omx_reader_openok = m_omx_reader_next->Open(filename, m_dump_format);
-  printf("thread opened %p (%d) openok %d\n", m_omx_reader_next, m_omx_reader_next->AudioStreamCount(), m_omx_reader_openok);
+  if(DEBUG_VERBOSE) printf("thread opened %p (%d) openok %d\n", m_omx_reader_next, m_omx_reader_next->AudioStreamCount(), m_omx_reader_openok);
   return m_omx_reader_next;
 }
 
@@ -442,7 +443,7 @@ void SetVideoMode(int width, int height, int fpsrate, int fpsscale, FORMAT_3D_T 
 
   if(tv_found)
   {
-    printf("Output mode %d: %dx%d@%d %s%s:%x\n", tv_found->code, tv_found->width, tv_found->height,
+    if(DEBUG_VERBOSE) printf("Output mode %d: %dx%d@%d %s%s:%x\n", tv_found->code, tv_found->width, tv_found->height,
            tv_found->frame_rate, tv_found->native?"N":"", tv_found->scan_mode?"I":"", tv_found->code);
     // if we are closer to ntsc version of framerate, let gpu know
     int ifps = (int)(fps+0.5f);
@@ -464,7 +465,7 @@ void SetVideoMode(int width, int height, int fpsrate, int fpsscale, FORMAT_3D_T 
       m_BcmHost.vc_tv_hdmi_set_property(&property);
     }
 
-    printf("ntsc_freq:%d %s%s\n", ntsc_freq, property.param1 == HDMI_3D_FORMAT_SBS_HALF ? "3DSBS":"", property.param1 == HDMI_3D_FORMAT_TB_HALF ? "3DTB":"");
+    if(DEBUG_VERBOSE) printf("ntsc_freq:%d %s%s\n", ntsc_freq, property.param1 == HDMI_3D_FORMAT_SBS_HALF ? "3DSBS":"", property.param1 == HDMI_3D_FORMAT_TB_HALF ? "3DTB":"");
     m_BcmHost.vc_tv_hdmi_power_on_explicit_new(HDMI_MODE_HDMI, (HDMI_RES_GROUP_T)group, tv_found->code);
   }
 }
@@ -642,8 +643,8 @@ int main(int argc, char *argv[])
         case 'v':
         m_player_audio.SetCurrentVolume((long)atoi(optarg)); //accepts value but does not not volume
         m_player_CLI_volume = (long)atoi(optarg);
-        printf("Current Volume: %.2fdB\n", m_player_audio.GetCurrentVolume() / 100.0f);
-         printf("Current Volume: %.2fdB\n", atoi(optarg) / 100.0f);
+        if(DEBUG_VERBOSE) printf("Current Volume: %.2fdB\n", m_player_audio.GetCurrentVolume() / 100.0f);
+         if(DEBUG_VERBOSE) printf("Current Volume: %.2fdB\n", atoi(optarg) / 100.0f);
         break;
       case 0:
         break;
@@ -674,7 +675,7 @@ int main(int argc, char *argv[])
   CLog::Init("./");
 
   optind_filenames = optind;
-
+//find function and kill messages
   pthread_create(&m_omx_reader_thread, NULL, reader_open_thread, argv[optind]);
 
   start_omx();
@@ -1019,11 +1020,11 @@ play_file:
         break;
       case '-':
         m_player_audio.SetCurrentVolume(m_player_audio.GetCurrentVolume() - 300);
-        printf("Current Volume: %.2fdB\n", m_player_audio.GetCurrentVolume() / 100.0f);
+        if(DEBUG_VERBOSE) printf("Current Volume: %.2fdB\n", m_player_audio.GetCurrentVolume() / 100.0f);
         break;
       case '+':
         m_player_audio.SetCurrentVolume(m_player_audio.GetCurrentVolume() + 300);
-        printf("Current Volume: %.2fdB\n", m_player_audio.GetCurrentVolume() / 100.0f);
+        if(DEBUG_VERBOSE) printf("Current Volume: %.2fdB\n", m_player_audio.GetCurrentVolume() / 100.0f);
         break;
       default:
         break;

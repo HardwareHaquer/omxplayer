@@ -118,9 +118,9 @@ bool OMXReader::Open(std::string filename, bool dump_format)
 {
   if (!m_dllAvUtil.Load() || !m_dllAvCodec.Load() || !m_dllAvFormat.Load())
     return false;
-  
+
   m_iCurrentPts = DVD_NOPTS_VALUE;
-  m_filename    = filename; 
+  m_filename    = filename;
   m_speed       = DVD_PLAYSPEED_NORMAL;
   m_program     = UINT_MAX;
   const AVIOInterruptCB int_cb = { interrupt_cb, NULL };
@@ -144,7 +144,7 @@ bool OMXReader::Open(std::string filename, bool dump_format)
     m_filename.replace(0, 8, "http://");
 
   if(m_filename.substr(0,6) == "mms://" || m_filename.substr(0,7) == "mmsh://" || m_filename.substr(0,7) == "mmst://" || m_filename.substr(0,7) == "mmsu://" ||
-      m_filename.substr(0,7) == "http://" || 
+      m_filename.substr(0,7) == "http://" ||
       m_filename.substr(0,7) == "rtmp://" || m_filename.substr(0,6) == "udp://" ||
       m_filename.substr(0,7) == "rtsp://" )
   {
@@ -247,8 +247,8 @@ bool OMXReader::Open(std::string filename, bool dump_format)
     }
   }
 
-  printf("file : %s result %d format %s audio streams %d video streams %d chapters %d subtitles %d length %d\n", 
-      m_filename.c_str(), result, m_pFormatContext->iformat->name, m_audio_count, m_video_count, m_chapter_count, m_subtitle_count, GetStreamLength() / 1000);
+ // printf("file : %s result %d format %s audio streams %d video streams %d chapters %d subtitles %d length %d\n",
+  //    m_filename.c_str(), result, m_pFormatContext->iformat->name, m_audio_count, m_video_count, m_chapter_count, m_subtitle_count, GetStreamLength() / 1000);
 
 
   m_speed       = DVD_PLAYSPEED_NORMAL;
@@ -309,7 +309,7 @@ bool OMXReader::Close()
     m_dllAvUtil.av_free(m_ioContext->buffer);
     m_dllAvUtil.av_free(m_ioContext);
   }
-  
+
   m_ioContext       = NULL;
   m_pFormatContext  = NULL;
 
@@ -423,7 +423,7 @@ AVMediaType OMXReader::PacketType(OMXPacket *pkt)
 OMXPacket *OMXReader::Read()
 {
   assert(!IsEof());
-  
+
   AVPacket  pkt;
   OMXPacket *m_omx_pkt = NULL;
   int       result = -1;
@@ -552,7 +552,7 @@ OMXPacket *OMXReader::Read()
     if(duration > pStream->duration)
     {
       pStream->duration = duration;
-      duration = m_dllAvUtil.av_rescale_rnd(pStream->duration, (int64_t)pStream->time_base.num * AV_TIME_BASE, 
+      duration = m_dllAvUtil.av_rescale_rnd(pStream->duration, (int64_t)pStream->time_base.num * AV_TIME_BASE,
                                             pStream->time_base.den, AV_ROUND_NEAR_INF);
       if ((m_pFormatContext->duration == (int64_t)AV_NOPTS_VALUE)
           ||  (m_pFormatContext->duration != (int64_t)AV_NOPTS_VALUE && duration > m_pFormatContext->duration))
@@ -661,7 +661,7 @@ void OMXReader::AddStream(int id)
 
   AVStream *pStream = m_pFormatContext->streams[id];
   // discard PNG stream as we don't support it, and it stops mp3 files playing with album art
-  if (pStream->codec->codec_type == AVMEDIA_TYPE_VIDEO && 
+  if (pStream->codec->codec_type == AVMEDIA_TYPE_VIDEO &&
     (pStream->codec->codec_id == CODEC_ID_PNG))
     return;
 
