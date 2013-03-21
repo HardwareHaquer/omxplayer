@@ -32,6 +32,7 @@ development headers to install on the running Pi system for the crosscompiling.
 
 Edit Makefile.include and change the settings according your locations.
 
+If you need help setting up a cross-compiler there is a great tutorial posted [here](http://www.cnx-software.com/2013/01/26/raspberry-pi-now-has-experimental-support-for-vp6-vp8-mjpeg-and-ogg-theora-video-codecs/).
 ### Compiling on the Pi
 
 You can also compile it on the PI the native way ;)
